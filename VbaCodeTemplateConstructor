@@ -1,0 +1,130 @@
+Function SheetExist(ShName As String) As Boolean
+    Dim mySheet As Worksheet
+        On Error Resume Next
+            Set mySheet = Sheets(ShName)
+        SheetExist = Not mySheet Is Nothing
+End Function
+Sub run_test()
+
+    If Not SheetExist("TestSheetName") Then
+        Sheets.Add.Name = "TestSheetName"
+    End If
+   ' test ("шаблон_сумма_ОНВОС2021")
+    'Debug.Print Cells(1, 1)
+   
+    
+    
+End Sub
+Sub writeToModule(str As String)
+ActiveWorkbook.VBProject.VBComponents("NewModuleTest").CodeModule.AddFromString str
+End Sub
+'Sub test(sheetName As String)
+Sub test()
+Dim sheetName As String
+sheetName = "шаблон_сумма_ОНВОС2021"
+    Dim lastRow As Integer
+    Dim lastCol As Integer
+    lastRow = Sheets(sheetName).Cells(Rows.Count, 1).End(xlUp).Row
+    lastCol = Sheets(sheetName).Cells(1, Columns.Count).End(xlToLeft).Column
+    Dim proxyStr As String
+    Dim Rg As Range
+    With Sheets(sheetName)
+    Dim pixels As Integer
+    Dim points As Single
+    
+   
+   
+        Debug.Print "With Sheets(" & sheetName & ")"
+        'writeToModule "With Sheets(""" & sheetName & """)"
+        writeToModule "'sub test() 'придется раскомменчивать"
+        writeToModule " With Sheets(" & """TestSheetName""" & ")"
+        For Cl = 1 To lastCol
+            pixels = ColumnWidthToPixels(.Columns(Cl).ColumnWidth, Sheets("шаблон_сумма_ОНВОС2021"))
+            points = PixelsToColumnWidth(pixels, Sheets("TestSheetName"))
+            proxyStr = "    .Columns(" & Cl & ").ColumnWidth = " & CStr(points)
+            proxyStr = Replace(proxyStr, ",", ".")
+            Debug.Print proxyStr
+            writeToModule proxyStr
+        Next Cl
+
+        For Rw = 1 To lastCol
+            proxyStr = "    .Rows(" & Rw & ").EntireRow.RowHeight = " & .Rows(Rw).Height
+            proxyStr = Replace(proxyStr, ",", ".")
+            Debug.Print proxyStr
+            writeToModule proxyStr
+        Next Rw
+        
+        'Rg = Sheets(sheetName).Range(Cells(1, 1), Cells(lastRow, lastCol))
+'        For Rw = 1 To lastCol
+'            For Cl = 1 To lastCol
+''                If .Cells(Rw, Cl).Value <> "" Then
+''                    Debug.Print ".Cells(" & Rw & "," & Cl & ").Value = " & .Cells(Rw, Cl).Value
+''                End If
+''MergeArea.Column, MergeAreaRow  - левый верхний угол объединения
+''MergeCells = True or False
+'
+'                If Cells(Rw, Cl).MergeCells = True Then
+'
+'                    'Debug.Print Cells(Rw, Cl).MergeArea.Count
+'                End If
+'                'Range(.Cells(1,1)).MergeArea.Count - вернет количество объединенных с яейкой ячеек
+'            Next Cl
+'        Next Rw
+    writeToModule " End With"
+    writeToModule "end sub"
+    End With
+End Sub
+
+Sub CreateNewModule(ByVal moduleTypeIndex As Integer, ByVal NewModuleName As String)
+    Dim ModuleComponent As VBComponent
+    On Error GoTo create_point
+    Set ModuleComponent = ActiveWorkbook.VBProject.VBComponents(NewModuleName)
+    Exit Sub
+create_point:
+    
+    Set ModuleComponent = ActiveWorkbook.VBProject.VBComponents.Add(moduleTypeIndex)
+    If Not ModuleComponent Is Nothing Then ModuleComponent.Name = NewModuleName
+    
+    On Error GoTo 0
+        Set ModuleComponent = Nothing
+
+        
+End Sub
+Sub tests()
+Call CreateNewModule(1, "NewModuleTest")
+Dim ModuleComponent As CodeModule
+End Sub
+Function setColWidth(PixelSize) As Double
+    If PixelSize <= 12 Then
+        setColWidth = PixelSize / 12
+    Else
+        setColWidth = 1 + (PixelSize - 12) / 12
+    End If
+   End Function
+   
+Function ColumnWidthToPixels(ByVal ColWidth As Single, Sh As Worksheet) As Integer
+    Select Case Round(ColWidth, 4)
+        Case Is < 0:
+            ColumnWidthToPixels = ColumnWidthToPixels(Sh.StandardWidth, Sh)
+        Case Is < 1:
+            ColumnWidthToPixels = Round(ColWidth * 12, 0)
+        Case Is <= 255:
+            ColumnWidthToPixels = Round(12 + ((Int(ColWidth) - 1) * 7) _
+            + Round((ColWidth - Int(ColWidth)) * 7, 0), 0)
+        Case Else:
+            ColumnWidthToPixels = ColumnWidthToPixels(Sh.StandardWidth, Sh)
+    End Select
+End Function
+
+Function PixelsToColumnWidth(ByVal pixels As Integer, Sh As Worksheet) As Single
+    Select Case pixels
+    Case Is < 0:
+        PixelsToColumnWidth = Sh.StandardWidth
+    Case Is < 12:
+        PixelsToColumnWidth = Round(pixels / 12, 2)
+    Case Is <= 1790:
+        PixelsToColumnWidth = Round(1 + ((pixels - 12) / 7), 2)
+    Case Else:
+        PixelsToColumnWidth = Sh.StandardWidth
+    End Select
+End Function
