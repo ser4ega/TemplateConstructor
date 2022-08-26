@@ -22,44 +22,57 @@ Sub test()
     run_test        'создаем лист
     tests        'создаем модуль 'или очищаем созданный
     Dim sheetName   As String
-    sheetName = "Лист1"
+    sheetName = "шаблон_титул2020"
     Dim origSh      As Worksheet
     Set origSh = Sheets(sheetName)
     Dim lastRow     As Integer
     Dim lastCol     As Integer
     'lastRow = origSh.Cells(Rows.Count, 1).End(xlUp).Row
     'lastCol = origSh.Cells(1, Columns.Count).End(xlToLeft).Column
-    lastRow = 30
-    lastCol = 20
+    lastRow = 65
+    lastCol = 120
+    Dim chunkSize As Integer
+    chunkSize = 1
     Dim proxyStr    As String
     Dim Rg          As Range
     Dim pixels      As Integer
     Dim points      As Single
     With Sheets(sheetName)
         
-        Debug.Print "With Sheets(" & sheetName & ")"
-        
-        writeToModule "       'sub test() 'Раскомментить перед запуском"
+        writeToModule "       'sub part0() 'Раскомментить перед запуском"
         writeToModule "        'With Sheets(" & """TestSheetName""" & ")"
-        For cl = 1 To lastCol
-            pixels = ColumnWidthToPixels(.Columns(cl).ColumnWidth, origSh)
+        For Cl = 1 To lastCol
+            pixels = ColumnWidthToPixels(.Columns(Cl).ColumnWidth, origSh)
             points = PixelsToColumnWidth(pixels, origSh)
-            proxyStr = "        '.Columns(" & cl & ").ColumnWidth = " & CStr(points)
+            proxyStr = "        '.Columns(" & Cl & ").ColumnWidth = " & CStr(points)
             proxyStr = Replace(proxyStr, ",", ".")
             'Debug.Print proxyStr
             writeToModule proxyStr
-        Next cl
+        Next Cl
         
-        For rw = 1 To lastCol
-            proxyStr = "        '.Rows(" & rw & ").EntireRow.RowHeight = " & .Rows(rw).Height
+        For Rw = 1 To lastCol
+            proxyStr = "        '.Rows(" & Rw & ").EntireRow.RowHeight = " & .Rows(Rw).Height
             proxyStr = Replace(proxyStr, ",", ".")
             'Debug.Print proxyStr
             writeToModule proxyStr
-        Next rw
+        Next Rw
         
         'Rg = Sheets(sheetName).Range(Cells(1, 1), Cells(lastRow, lastCol))
-        For rw = 1 To lastCol
-            For cl = 1 To lastCol
+        Dim newSub As Boolean
+        newSub = False
+        Dim LastClInMerge As Integer
+        Dim LastRwInMerge As Integer
+        Dim lines()
+        lines = Array(xlDiagonalDown, xlDiagonalDown, xlDiagonalUp, xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, xlInsideVertical, xlInsideHorizontal)
+        For Rw = 1 To lastCol
+            If Rw Mod chunkSize = 0 Then
+                writeToModule "        'End With"
+                writeToModule "        'End sub"
+                writeToModule "        'sub part" & CStr(Rw \ chunkSize) & "()"
+                    writeToModule "        'With Sheets(" & """TestSheetName""" & ")"
+                End If
+            For Cl = 1 To lastCol
+                
                 '                If .Cells(Rw, Cl).Value <> "" Then
                 '                    Debug.Print ".Cells(" & Rw & "," & Cl & ").Value = " & .Cells(Rw, Cl).Value
                 '                End If
@@ -67,87 +80,99 @@ Sub test()
                 'MergeCells = True or False
                 
                 ' мерджим только для левой верхней
-                Dim LastClInMerge As Integer
-                Dim LastRwInMerge As Integer
-                Dim lines()
-                lines = Array(xlDiagonalDown, xlDiagonalDown, xlDiagonalUp, xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, xlInsideVertical, xlInsideHorizontal)
                 
-                If .Cells(rw, cl).MergeCells = True _
-                   And .Cells(rw, cl).MergeArea.Column = cl _
-                   And .Cells(rw, cl).MergeArea.Row = rw Then
-                LastClInMerge = cl + .Cells(rw, cl).MergeArea.Columns.Count - 1
-                LastRwInMerge = rw + .Cells(rw, cl).MergeArea.Rows.Count - 1
                 
-                writeToModule "        'Range(Cells(" & rw & "," & cl & "), Cells(" & LastRwInMerge & "," & LastClInMerge & ")).Select"
-                writeToModule "       'With Selection"
-                writeToModule "        '.HorizontalAlignment = xlCenter"
-                writeToModule "        '.VerticalAlignment = xlBottom"
-                writeToModule "        '.WrapText = False"
-                writeToModule "        '.Orientation = 0"
-                writeToModule "        '.AddIndent = False"
-                writeToModule "       '.IndentLevel = 0"
-                writeToModule "       '.ShrinkToFit = False"
-                writeToModule "       '.ReadingOrder = xlContext"
-                writeToModule "        '.MergeCells = False"
-                writeToModule "        'End With"
-                writeToModule "       'Selection.Merge"
                 
-            End If
+                If .Cells(Rw, Cl).MergeCells = True _
+                   And .Cells(Rw, Cl).MergeArea.Column = Cl _
+                   And .Cells(Rw, Cl).MergeArea.Row = Rw Then
+                    LastClInMerge = Cl + .Cells(Rw, Cl).MergeArea.Columns.Count - 1
+                    LastRwInMerge = Rw + .Cells(Rw, Cl).MergeArea.Rows.Count - 1
+                    
+                    writeToModule "        'Range(Cells(" & Rw & "," & Cl & "), Cells(" & LastRwInMerge & "," & LastClInMerge & ")).Select"
+                    writeToModule "       'With Selection"
+                    writeToModule "        '.HorizontalAlignment = xlCenter"
+                    writeToModule "        '.VerticalAlignment = xlBottom"
+                    writeToModule "        '.WrapText = False"
+                    writeToModule "        '.Orientation = 0"
+                    writeToModule "        '.AddIndent = False"
+                    writeToModule "       '.IndentLevel = 0"
+                    writeToModule "       '.ShrinkToFit = False"
+                    writeToModule "       '.ReadingOrder = xlContext"
+                    writeToModule "        '.MergeCells = False"
+                    writeToModule "        'End With"
+                    writeToModule "       'Selection.Merge"
+                
+                End If
             
-            If .Cells(rw, cl).Value <> "" Then
-                writeToModule "        '.Cells(" & rw & ", " & cl & ") = " & """" & .Cells(rw, cl).Value & """"
-                'writeToModule " 'With .Cells(" & rw & ", " & cl & ")"
-                If IsNull(.Cells(rw, cl).Font.Background) Then
-                    writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Background = Null"
+            If .Cells(Rw, Cl).Value <> "" Then
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ") = " & """" & .Cells(Rw, Cl).Value & """"
+                writeToModule " 'With .Cells(" & Rw & ", " & Cl & ")"
+                If IsNull(.Cells(Rw, Cl).Font.Background) Then
+                    writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Background = Null"
                 Else
-                    writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Background =" & .Cells(rw, cl).Font.Background
+                    writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Background =" & .Cells(Rw, Cl).Font.Background
                 End If
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Bold =" & .Cells(rw, cl).Font.Bold
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Color =" & .Cells(rw, cl).Font.Color
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.ColorIndex =" & .Cells(rw, cl).Font.ColorIndex
-                'writeToModule " '.Cells(" & rw & ", " & cl & ").Font.Creator =" & .Cells(rw, cl).Font.Creator
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.FontStyle =" & """" & .Cells(rw, cl).Font.FontStyle & """"
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Italic =" & .Cells(rw, cl).Font.Italic
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Name =" & """" & .Cells(rw, cl).Font.Name & """"
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.OutlineFont =" & .Cells(rw, cl).Font.OutlineFont
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Shadow =" & .Cells(rw, cl).Font.Shadow
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Size =" & .Cells(rw, cl).Font.Size
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Strikethrough =" & .Cells(rw, cl).Font.Strikethrough
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Subscript =" & .Cells(rw, cl).Font.Subscript
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Superscript =" & .Cells(rw, cl).Font.Superscript
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.ThemeColor =" & .Cells(rw, cl).Font.ThemeColor
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.ThemeFont =" & .Cells(rw, cl).Font.ThemeFont
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.TintAndShade =" & .Cells(rw, cl).Font.TintAndShade
-                writeToModule "        '.Cells(" & rw & ", " & cl & ").Font.Underline =" & .Cells(rw, cl).Font.Underline
-                'writeToModule " 'End With"
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Bold =" & .Cells(Rw, Cl).Font.Bold
+                'writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Color =" & .Cells(Rw, Cl).Font.Color
+                'writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.ColorIndex =" & .Cells(Rw, Cl).Font.ColorIndex
+                'writeToModule " '.Cells(" & Rw & ", " & Cl & ").Font.Creator =" & .Cells(Rw, Cl).Font.Creator
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.FontStyle =" & """" & .Cells(Rw, Cl).Font.FontStyle & """"
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Italic =" & .Cells(Rw, Cl).Font.Italic
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Name =" & """" & .Cells(Rw, Cl).Font.Name & """"
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.OutlineFont =" & .Cells(Rw, Cl).Font.OutlineFont
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Shadow =" & .Cells(Rw, Cl).Font.Shadow
+                If .Cells(Rw, Cl).Font.Size <> "" Then
+                    proxyStr = "        '.Cells(" & Rw & ", " & Cl & ").Font.Size =" & Replace(.Cells(Rw, Cl).Font.Size, ",", ".")
+                    writeToModule proxyStr
                 End If
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Strikethrough =" & .Cells(Rw, Cl).Font.Strikethrough
+                If .Cells(Rw, Cl).Font.Subscript <> "" Then writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Subscript =" & .Cells(Rw, Cl).Font.Subscript
+                If .Cells(Rw, Cl).Font.Superscript <> "" Then writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Superscript =" & .Cells(Rw, Cl).Font.Superscript
+                'writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.ThemeColor =" & .Cells(Rw, Cl).Font.ThemeColor
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.ThemeFont =" & .Cells(Rw, Cl).Font.ThemeFont
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.TintAndShade =" & .Cells(Rw, Cl).Font.TintAndShade
+                writeToModule "        '.Cells(" & Rw & ", " & Cl & ").Font.Underline =" & .Cells(Rw, Cl).Font.Underline
+                writeToModule " 'End With"
+            End If
                 'границы
-                With .Cells(rw, cl)
+                With .Cells(Rw, Cl)
                     'lines = Array(xlDiagonalDown, xlDiagonalDown, xlDiagonalUp, xlEdgeLeft, xlEdgeTop, xlEdgeBottom, xlEdgeRight, xlInsideVertical, xlInsideHorizontal)
                     For Each BorderDirection In lines
                         If .Borders(BorderDirection).LineStyle <> xlNone Then
-                            
-                         writeToModule " 'With .Cells(" & rw & ", " & cl & ").Borders(" & BorderDirection & ")"
-                         
+
+                         writeToModule " 'With .Cells(" & Rw & ", " & Cl & ").Borders(" & BorderDirection & ")"
+
                             With .Borders(BorderDirection)
                                 writeToModule " '.LineStyle = " & .LineStyle
-                                writeToModule " '.ColorIndex = " & .ColorIndex
-                                writeToModule " '.TintAndShade = " & .TintAndShade
+                                'writeToModule " '.ColorIndex = " & .ColorIndex
+                                'writeToModule " '.TintAndShade = " & .TintAndShade
                                 writeToModule " '.Weight = " & .Weight
                             End With
-                            
+
                           writeToModule " 'End With"
-                            
+
                         End If
                     Next
-                    
-                
-                
-            End With
+                End With
             
-        Next cl
-    Next rw
+            
+            
+            
+        Next Cl
+    Next Rw
+    
     writeToModule "        'End With"
+    writeToModule "       'end sub"
+    
+    ' запуск всех процедур
+    writeToModule "        'sub main_run"
+    writeToModule "     'call part0"
+    For Rw = 1 To lastCol
+        If Rw Mod chunkSize = 0 Then
+                writeToModule "        'Call part" & CStr(Rw \ chunkSize) & "()"
+        End If
+    Next Rw
     writeToModule "       'end sub"
 End With
 End Sub
@@ -214,4 +239,6 @@ Function PixelsToColumnWidth(ByVal pixels As Integer, Sh As Worksheet) As Single
             PixelsToColumnWidth = Sh.StandardWidth
     End Select
 End Function
+
+
 
